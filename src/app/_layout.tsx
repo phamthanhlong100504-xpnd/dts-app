@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useAppStore } from '../store/useAppStore';
 import { View } from 'react-native';
-
+import '../global.css';
 export default function RootLayout() {
   const theme = useAppStore((state) => state.theme);
 
