@@ -48,3 +48,19 @@ example
 # generated native folders
 /ios
 /android
+
+# DTS local audit/backup output; never version credentials or runtime reports.
+.env.*
+!.env.example
+/local-secrets*.json
+/handoff/
+/audit-output/
+/test-results/
+/coverage/
+*.bak
+*.backup
+*.zip
+
+# Python validation tools
+__pycache__/
+*.py[cod]

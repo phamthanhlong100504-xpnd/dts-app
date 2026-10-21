@@ -1,0 +1,13 @@
+# Preserve verified task/fixture bytes without changing untouched starter files.
+src/features/** -text
+src/lib/api/** -text
+src/app/chapters.tsx -text
+src/app/practice/** -text
+src/app/wrong-questions.tsx -text
+src/app/wrong-questions/** -text
+src/app/history.tsx -text
+src/app/history/** -text
+tests/** -text
+docs/** -text
+/package.json -text
+/package-lock.json -text
