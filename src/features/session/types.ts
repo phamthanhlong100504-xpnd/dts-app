@@ -4,6 +4,10 @@ export type LearnerProfile = {
   fullName: string;
   email: string;
   selectedLicenseClass: string | null;
+  birthOfDate?: string | null;
+  phoneNumber?: string | null;
+  emailVerifiedAt?: string | null;
+  status?: string;
 };
 
 export type AuthSession = {

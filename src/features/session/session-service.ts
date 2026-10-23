@@ -22,6 +22,10 @@ function profileOf(value: unknown): LearnerProfile {
     fullName: typeof data.fullName === 'string' ? data.fullName : '',
     email: typeof data.email === 'string' ? data.email : '',
     selectedLicenseClass: data.selectedLicenseClass === null ? null : requiredString(data.selectedLicenseClass),
+    ...(Object.prototype.hasOwnProperty.call(data, 'birthOfDate') ? { birthOfDate: typeof data.birthOfDate === 'string' ? data.birthOfDate : null } : {}),
+    ...(Object.prototype.hasOwnProperty.call(data, 'phoneNumber') ? { phoneNumber: typeof data.phoneNumber === 'string' ? data.phoneNumber : null } : {}),
+    ...(Object.prototype.hasOwnProperty.call(data, 'emailVerifiedAt') ? { emailVerifiedAt: typeof data.emailVerifiedAt === 'string' ? data.emailVerifiedAt : null } : {}),
+    ...(typeof data.status === 'string' ? { status: data.status } : {}),
   };
 }
 
@@ -74,7 +78,7 @@ async function refreshSession(version: number): Promise<void> {
   finally { if (refresh?.promise === promise) refresh = null; }
 }
 
-export async function learnerRequest<T>(path: string, options: RequestInit = {}, format: 'envelope' | 'plain' = 'envelope'): Promise<T> {
+export async function learnerRequest<T>(path: string, options: RequestInit = {}, format: 'envelope' | 'plain' | 'ack' = 'envelope'): Promise<T> {
   const version = useLearnerSession.getState().version;
   const send = () => envelopeRequest<T>(path, {
     ...options, headers: { ...options.headers, Authorization: `Bearer ${assertSession(version).accessToken}` },
@@ -129,4 +133,14 @@ export async function chooseLearnerLicense(code: string): Promise<void> {
   if (saved !== code) throw new DtsApiError('Máy chủ chưa xác nhận hạng bằng đã chọn.');
   const current = assertSession(version);
   useLearnerSession.getState().acceptProfile(version, { ...current.profile, selectedLicenseClass: saved });
+}
+
+export async function registerLearner(body: { username: string; email: string; password: string; fullName: string; birthOfDate: string; phoneNumber: string }): Promise<void> {
+  const version = useLearnerSession.getState().beginSignIn();
+  const auth = tokensOf(await envelopeRequest('/api/v1/auth/register', { method: 'POST', body: JSON.stringify(body) }));
+  if (useLearnerSession.getState().version !== version) throw new DtsApiError('Yêu cầu đăng ký đã hết hiệu lực.');
+  const profile = profileOf(await envelopeRequest('/api/v1/users/me', { headers: { Authorization: `Bearer ${auth.accessToken}` } }));
+  if (requiredString(auth.user.id) !== profile.id) throw new DtsApiError('Hồ sơ không khớp tài khoản vừa đăng ký.');
+  if (useLearnerSession.getState().version !== version) throw new DtsApiError('Yêu cầu đăng ký đã hết hiệu lực.');
+  useLearnerSession.getState().acceptSignIn(version, { accessToken: auth.accessToken, refreshToken: auth.refreshToken, profile });
 }

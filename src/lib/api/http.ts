@@ -17,7 +17,7 @@ export function gatewayUrl(): string {
   return configured.replace(/\/$/, '');
 }
 
-export async function envelopeRequest<T>(path: string, options: RequestInit = {}, format: 'envelope' | 'plain' = 'envelope'): Promise<T> {
+export async function envelopeRequest<T>(path: string, options: RequestInit = {}, format: 'envelope' | 'plain' | 'ack' = 'envelope'): Promise<T> {
   if (!path.startsWith('/api/')) throw new DtsApiError('Đường dẫn DTS không hợp lệ.');
   const base = gatewayUrl();
   const controller = new AbortController();
@@ -41,6 +41,14 @@ export async function envelopeRequest<T>(path: string, options: RequestInit = {}
       throw new DtsApiError(`${body.message || 'Không thực hiện được yêu cầu.'} (HTTP ${response.status}${id ? ` · ${id}` : ''})`, response.status, body.errorCode);
     }
     if (format === 'plain') return body as T;
+    // Identity omits null data for Void responses (@JsonInclude NON_NULL).
+    // Only explicit no-data commands may accept this; reads still require data.
+    if (format === 'ack') {
+      if (body.success !== true || (Object.prototype.hasOwnProperty.call(body, 'data') && body.data !== null)) {
+        throw new DtsApiError('Phản hồi xác nhận DTS không đúng định dạng.', response.status);
+      }
+      return undefined as T;
+    }
     if (!Object.prototype.hasOwnProperty.call(body, 'data')) throw new DtsApiError('Phản hồi DTS thiếu dữ liệu.', response.status);
     return body.data as T;
   } catch (error) {
