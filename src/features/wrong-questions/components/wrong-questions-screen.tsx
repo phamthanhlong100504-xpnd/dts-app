@@ -2,7 +2,9 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { StudyAccess } from '../../session/components/study-access';
-import { StudyLicensePicker } from '../../session/components/study-license-picker';
+import { QuestionPickerButton } from '../../shared/question-sheet';
+import { studyCardBodyText } from '../../shared/study-typography';
+import { WrongQuestionNavigator } from './wrong-question-navigator';
 import { useLearnerSession } from '../../session/session-store';
 import { useLearnerResource } from '../../session/use-learner-resource';
 import { filterWrongQuestions, getWrongOverview, isWrongFilter, type WrongFilter } from '../wrong-service';
@@ -13,17 +15,21 @@ const FILTERS: { key: WrongFilter; label: string }[] = [
 ];
 function WrongQuestionsContent({ licenseClass, initialFilter }: { licenseClass: string; initialFilter: WrongFilter }) {
   const [filter, setFilter] = useState<WrongFilter>(initialFilter);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
   const loader = useCallback(() => getWrongOverview(licenseClass), [licenseClass]);
   const { data, loading, error, reload } = useLearnerResource('wrong-questions', loader);
   const rows = data ? filterWrongQuestions(data.questions, filter) : [];
+  function openQuestion(id: number) {
+    router.push({ pathname: '/wrong-questions/[questionId]', params: { questionId: String(id), licenseClass, filter } });
+  }
   return <>
     <Stack.Screen options={{ headerShown: true, title: 'Các câu đã sai', headerTitleAlign: 'center', headerBackButtonDisplayMode: 'minimal',
-      headerShadowVisible: true, headerRight: () => <StudyLicensePicker /> }} />
+      headerShadowVisible: true, headerRight: () => <QuestionPickerButton open={navigatorOpen} disabled={loading || !!error || !rows.length} onPress={() => setNavigatorOpen(true)} /> }} />
     <View className="flex-1 bg-white">
       <View style={{ paddingTop: 12, paddingBottom: 12 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           {FILTERS.map((item) => <Pressable key={item.key} accessibilityRole="button" accessibilityState={{ selected: filter === item.key }}
-            onPress={() => { setFilter(item.key); router.setParams({ filter: item.key }); }}
+            onPress={() => { setNavigatorOpen(false); setFilter(item.key); router.setParams({ filter: item.key }); }}
             style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 10, paddingHorizontal: 15,
               backgroundColor: filter === item.key ? '#0877F9' : '#EFF6FF' }}>
             <Text className="text-base font-semibold" style={{ fontSize: 16, color: filter === item.key ? '#FFFFFF' : '#1D4ED8' }}>{item.label}</Text>
@@ -42,12 +48,13 @@ function WrongQuestionsContent({ licenseClass, initialFilter }: { licenseClass: 
             <Text className="mt-2 text-center text-base leading-6 text-gray-600">Danh sách được cập nhật theo kết quả đã lưu trên hệ thống.</Text>
           </View> : null}
         renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`Xem câu ${item.sourceNumber ?? item.question.id}`}
-          onPress={() => router.push({ pathname: '/wrong-questions/[questionId]',
-            params: { questionId: String(item.question.id), licenseClass, filter } })}
+          onPress={() => openQuestion(item.question.id)}
           className="rounded-2xl border border-gray-200 bg-gray-100 p-4" style={{ marginBottom: 16 }}>
-          <Text className="text-lg font-normal leading-7 text-gray-900">Câu {item.sourceNumber ?? item.question.id}: {item.question.text}</Text>
+          <Text style={studyCardBodyText}>Câu {item.sourceNumber ?? item.question.id}: {item.question.text}</Text>
         </Pressable>} />
     </View>
+    <WrongQuestionNavigator rows={rows} open={navigatorOpen} close={() => setNavigatorOpen(false)}
+      disabled={loading || !!error} onSelect={openQuestion} />
   </>;
 }
 function LicensedWrongQuestions() {

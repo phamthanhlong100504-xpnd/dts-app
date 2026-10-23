@@ -84,6 +84,22 @@ export class WrongQuestionModel {
       if (this.queuedReload) { this.queuedReload = false; void this.load(); }
     }
   }
+  selectQuestion(questionId: number): boolean {
+    if (this.pending || this.state.loading || this.state.needsReload) return false;
+    const data = this.state.data;
+    if (!data) return false;
+    try { assertStudyScope(data.scope); }
+    catch (error) {
+      this.set({ needsReload: true, error: error instanceof Error ? error.message : 'Phiên học đã thay đổi.' });
+      return false;
+    }
+    const row = data.questions.find((item) => item.question.id === questionId);
+    if (!row || !this.state.availableIds.includes(questionId)) return false;
+    if (this.currentId === questionId) return true;
+    this.currentId = questionId;
+    this.set({ row, grade: null, resolved: false, error: null });
+    return true;
+  }
   move(direction: 1 | -1): boolean {
     if (this.pending || this.state.loading || this.state.needsReload) return false;
     const data = this.state.data;

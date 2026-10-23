@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StudyAccess } from '../../session/components/study-access';
-import { StudyLicensePicker } from '../../session/components/study-license-picker';
+import { QuestionPickerButton } from '../../shared/question-sheet';
+import { WrongQuestionNavigator } from './wrong-question-navigator';
 import { useLearnerSession } from '../../session/session-store';
 import { useWrongQuestion } from '../use-wrong-question';
 import { createWrongQuestionSwipe } from '../wrong-question-swipe';
@@ -46,10 +47,6 @@ export function WrongQuestionContent({ row, data, grade, busy, resolved, needsRe
         </Pressable>;
       })}
       {busy && <ActivityIndicator color="#0877F9" accessibilityLabel="Đang chấm đáp án" />}
-      {grade && (grade.isCorrect || resolved) && <Text accessibilityLiveRegion="polite" className="my-2 text-base leading-6 text-gray-900">
-        {grade.isCorrect ? 'Trả lời đúng.' : ''}
-        {resolved ? ' Câu này đã được loại khỏi danh sách cần ôn.' : ''}
-      </Text>}
       {resolved && !grade && <Text className="my-2 text-base leading-6 text-gray-900">Câu này không còn trong danh sách cần ôn.</Text>}
       {error && <View className="my-2"><Text selectable className="text-base leading-6 text-red-700">{error}</Text>
         <Pressable accessibilityRole="button" onPress={onReload} className="mt-2 min-h-11 justify-center"><Text className="text-base font-semibold text-blue-700">Đọc lại kết quả</Text></Pressable>
@@ -83,9 +80,12 @@ function backToList(filter: WrongFilter) {
 }
 function ReadingResource({ questionId, filter, licenseClass }: { questionId: number; filter: WrongFilter; licenseClass: string }) {
   const { state, model } = useWrongQuestion(questionId, licenseClass, filter);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
+  const rows = state.data?.questions.filter((row) => state.availableIds.includes(row.question.id)) ?? [];
+  const locked = state.loading || state.busy || state.needsReload;
   return <>
     <Stack.Screen options={{ headerShown: true, title: 'Ôn câu đã sai', headerTitleAlign: 'center', headerBackButtonDisplayMode: 'minimal',
-      headerShadowVisible: true, gestureEnabled: false, headerRight: () => <StudyLicensePicker /> }} />
+      headerShadowVisible: true, gestureEnabled: false, headerRight: () => <QuestionPickerButton open={navigatorOpen} disabled={locked || !rows.length} onPress={() => setNavigatorOpen(true)} /> }} />
     {state.loading ? <View className="flex-1 items-center justify-center bg-white"><ActivityIndicator size="large" color="#0877F9" />
       <Text className="mt-3 text-base text-gray-600">Đang tải câu hỏi...</Text></View> : state.data && state.row ?
       <WrongQuestionContent key={state.row.question.id} row={state.row} data={state.data} grade={state.grade}
@@ -96,6 +96,8 @@ function ReadingResource({ questionId, filter, licenseClass }: { questionId: num
         <Pressable accessibilityRole="button" onPress={() => { void model.load(); }} className="mt-3 min-h-11 justify-center"><Text className="text-base font-semibold text-blue-700">Thử lại</Text></Pressable>
         <Pressable accessibilityRole="button" onPress={() => backToList(filter)} className="mt-2 min-h-11 justify-center"><Text className="text-base font-semibold text-blue-700">Về danh sách câu sai</Text></Pressable>
       </View>}
+    <WrongQuestionNavigator rows={rows} currentId={state.row?.question.id} open={navigatorOpen}
+      close={() => setNavigatorOpen(false)} disabled={locked} onSelect={(id) => { model.selectQuestion(id); }} />
   </>;
 }
 function LicensedReading({ questionId, filter, expectedLicense }: { questionId: number; filter: WrongFilter; expectedLicense?: string }) {
