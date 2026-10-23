@@ -1,4 +1,4 @@
-# Preserve verified task/fixture bytes without changing untouched starter files.
+# Preserve verified app source and documentation bytes.
 src/features/** -text
 src/lib/api/** -text
 src/app/chapters.tsx -text
@@ -7,7 +7,19 @@ src/app/wrong-questions.tsx -text
 src/app/wrong-questions/** -text
 src/app/history.tsx -text
 src/app/history/** -text
-tests/** -text
 docs/** -text
 /package.json -text
 /package-lock.json -text
+src/app/_layout.tsx -text
+src/app/index.tsx -text
+src/app/login.tsx -text
+src/app/register.tsx -text
+src/app/forgot-password.tsx -text
+src/app/home.tsx -text
+src/app/profile.tsx -text
+src/app/settings.tsx -text
+src/app/exams.tsx -text
+src/app/preset-exams.tsx -text
+src/app/traffic-signs.tsx -text
+src/app/memory-tips.tsx -text
+src/app/preset-exams/** -text
