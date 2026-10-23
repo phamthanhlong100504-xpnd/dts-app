@@ -54,8 +54,8 @@ export function ChapterQuestionContent({ data, state, model, canSkip, onSkip }: 
       const correctChoice = grade?.correctAnswer === choice.key || (feedbackOpen && correctAnswer === choice.key);
       const wrongChoice = !!grade && selected && !grade.isCorrect;
       return <Pressable key={choice.key} accessibilityRole="button"
-        accessibilityState={{ disabled: locked || readOnly || !!grade, selected }} disabled={locked || readOnly || !!grade}
-        onPress={() => model.select(choice.key)} className="mb-3 min-h-16 flex-row items-center rounded-xl px-4 py-3"
+        accessibilityState={{ disabled: locked || readOnly, selected }} disabled={locked || readOnly}
+        onPress={() => { if (grade) model.edit(); model.select(choice.key); }} className="mb-3 min-h-16 flex-row items-center rounded-xl px-4 py-3"
         style={{ backgroundColor: correctChoice ? '#DCFCE7' : wrongChoice ? '#FEE2E2' : selected ? '#EFF6FF' : '#F3F4F6',
           borderColor: correctChoice ? '#16A34A' : wrongChoice ? '#EF4444' : selected ? '#0877F9' : 'transparent', borderWidth: 1 }}>
         <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-white">
@@ -89,10 +89,6 @@ export function ChapterQuestionContent({ data, state, model, canSkip, onSkip }: 
       {splitExplanationParagraphs(explanation || 'Chưa có giải thích cho câu này.').map((paragraph, index) =>
         <Text key={index} className="text-lg leading-7 text-gray-800"
           style={{ marginTop: index === 0 ? 4 : 10 }}>{paragraph}</Text>)}
-      {grade && !((data.mode === 'review' || data.collection === 'critical') && data.status === 'COMPLETED') && <Pressable accessibilityRole="button" disabled={locked}
-        className="mt-2 min-h-11 items-center justify-center" onPress={() => model.edit()}>
-        <Text className="text-center text-lg leading-7 text-gray-800">Trả lời lại câu này</Text>
-      </Pressable>}
     </View>}
   </>;
 }

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StudyAccess } from '../../session/components/study-access';
-import { StudyLicensePicker } from '../../session/components/study-license-picker';
+import { SymbolView } from 'expo-symbols';
 import { useLearnerSession } from '../../session/session-store';
 import type { StudyMode, StudyTarget } from '../study-types';
 import { useChapterStudy } from '../use-chapter-study';
@@ -38,7 +38,10 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
     headerTitle: () => <Text accessibilityRole="header" numberOfLines={1} ellipsizeMode="tail"
       style={{ maxWidth: Math.max(120, width - 144), fontSize: 18, lineHeight: 24,
         fontWeight: '600', color: '#111827', textAlign: 'center' }}>{title}</Text>,
-    headerRight: () => <StudyLicensePicker /> }} />;
+    headerRight: () => <Pressable accessibilityRole="button" accessibilityLabel="Chọn câu hỏi" disabled={state.loading || state.busy || state.needsReload || !data}
+      accessibilityState={{ expanded: navigatorOpen }} onPress={() => setNavigatorOpen(true)} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: state.busy || state.needsReload ? 0.4 : 1 }}>
+      <SymbolView name={{ ios: 'square.grid.3x3.fill', android: 'grid_view', web: 'grid_view' }} size={23} tintColor="#0877F9" />
+    </Pressable> }} />;
 
   if (state.loading) return <>{header}<View className="flex-1 items-center justify-center bg-white">
     <ActivityIndicator size="large" color="#0877F9" /><Text className="mt-3 text-base text-gray-600">Đang tải câu hỏi...</Text>
@@ -51,6 +54,7 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
     </Pressable><BackToChapters wrong={chapterId === 'wrong'} />
   </View></>;
 
+  const studyMode = data.mode;
   const question = data.questions.find((item) => item.id === data.currentQuestionId)!;
   const position = data.questions.findIndex((item) => item.id === question.id);
   const grade = state.editing ? undefined : data.answers[question.id];
@@ -58,14 +62,14 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
   const correct = answers.filter((answer) => answer.isCorrect).length;
   const learnedCount = data.learnedQuestionIds?.length ?? answers.length;
   const locked = state.busy || state.needsReload;
-  const readOnly = data.status === 'COMPLETED' && (mode === 'review' || data.collection === 'critical');
+  const readOnly = data.status === 'COMPLETED' && (studyMode === 'review' || data.collection === 'critical');
   const canNavigate = !!grade || readOnly;
   const nextId = data.questions[position + 1]?.id;
   const unanswered = data.questions.find((item) => !data.answers[item.id] && !data.learnedQuestionIds?.includes(item.id));
-  const canSkip = mode === 'learn' || !!nextId || (!!unanswered && unanswered.id !== question.id);
+  const canSkip = studyMode === 'learn' || !!nextId || (!!unanswered && unanswered.id !== question.id);
   async function next() {
     if (nextId) await model.move(nextId);
-    else if (mode === 'review' && unanswered && !readOnly) await model.move(unanswered.id);
+    else if (studyMode === 'review' && unanswered && !readOnly) await model.move(unanswered.id);
     else await model.finish();
   }
   const errorPanel = state.error && <View className="mb-4 rounded-xl bg-red-50 p-4">
@@ -78,10 +82,10 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
 
   if (state.finished) return <>{header}<ScrollView className="flex-1 bg-white" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
     {errorPanel}
-    <Text className="text-center text-2xl font-bold text-gray-900">{data.collection === 'wrong' ? 'Đã kết thúc lượt ôn câu sai' : mode === 'review' ? 'Đã hoàn thành vòng ôn tập' : 'Đã lưu tiến độ chương'}</Text>
+    <Text className="text-center text-2xl font-bold text-gray-900">{data.collection === 'wrong' ? 'Đã kết thúc lượt ôn câu sai' : studyMode === 'review' ? 'Đã hoàn thành vòng ôn tập' : 'Đã lưu tiến độ chương'}</Text>
     <Text className="mt-3 text-center text-lg text-gray-700">Đã trả lời {learnedCount}/{data.questions.length} câu</Text>
     <Text className="mt-2 text-center text-lg text-gray-700">Đúng {correct} · Sai {answers.length - correct} · Còn {data.questions.length - learnedCount}</Text>
-    <Text className="mt-3 text-center text-base text-gray-600">{mode === 'review'
+    <Text className="mt-3 text-center text-base text-gray-600">{studyMode === 'review'
       ? 'Kết quả vòng ôn tập được lưu riêng tại Practice.'
       : 'Đáp án và vị trí học đã được đọc lại từ Practice. Các câu bỏ qua vẫn chưa được tính là đã học.'}</Text>
     {data.wrongSummary && <Text className="mt-3 text-center text-lg font-semibold text-blue-700">
@@ -94,25 +98,6 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
   </ScrollView></>;
 
   return <>{header}<View className="flex-1 bg-white">
-    <View className="border-b border-gray-200 bg-white px-5 pb-4 pt-1">
-      <View className="flex-row items-center justify-between">
-        <Text className="flex-1 font-medium text-gray-600" style={{ fontSize: 14, lineHeight: 21 }}>
-          Hạng {licenseClass} · Đã trả lời {learnedCount}/{data.questions.length}
-        </Text>
-        {data.collection === 'wrong' && !readOnly && <Pressable accessibilityRole="button" disabled={locked}
-          accessibilityLabel="Kết thúc lượt ôn câu sai" onPress={() => { void model.finish(); }} className="min-h-11 justify-center pl-3">
-          <Text className="font-semibold text-gray-700" style={{ fontSize: 14 }}>Kết thúc</Text>
-        </Pressable>}
-        <Pressable accessibilityRole="button" disabled={locked} accessibilityState={{ disabled: locked }}
-          className="min-h-11 justify-center pl-3" onPress={() => setNavigatorOpen(true)}>
-          <Text className="font-semibold text-blue-700" style={{ fontSize: 15 }}>Chọn câu</Text>
-        </Pressable>
-      </View>
-      <View className="h-2 flex-row overflow-hidden rounded-full bg-gray-200">
-        {learnedCount > 0 && <View className="h-full bg-green-500" style={{ flex: learnedCount }} />}
-        {data.questions.length > learnedCount && <View className="h-full bg-gray-200" style={{ flex: data.questions.length - learnedCount }} />}
-      </View>
-    </View>
     <ScrollView ref={scroll} className="flex-1" contentInsetAdjustmentBehavior="never"
       contentContainerStyle={{ padding: 20, paddingBottom: 24 }}>
       {errorPanel}
@@ -125,27 +110,28 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <Pressable accessibilityRole="button" disabled={locked || position === 0}
           accessibilityState={{ disabled: locked || position === 0 }} hitSlop={{ top: 2, bottom: 2 }}
-          style={{ height: 40, minWidth: 96, maxWidth: '46%', paddingHorizontal: 14, borderRadius: 10,
-            borderWidth: 1, borderColor: '#0871E8',
-            alignItems: 'center', justifyContent: 'center', backgroundColor: '#0877F9',
+          style={{ minHeight: 44, maxWidth: '46%', flexDirection: 'row', gap: 5,
+            alignItems: 'center', justifyContent: 'center',
             opacity: locked || position === 0 ? 0.4 : 1 }}
           onPress={() => { void model.move(data.questions[position - 1].id); }}>
-          <Text style={{ fontSize: 15, lineHeight: 21, fontWeight: '600', color: '#FFFFFF' }}>Câu trước</Text>
+          <SymbolView name={{ ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' }} size={16} tintColor="#111827" />
+          <Text style={{ fontSize: 16, lineHeight: 24, fontWeight: '600', color: '#111827' }}>Câu trước</Text>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={locked || (!canNavigate && !state.selectedAnswer)}
           accessibilityState={{ disabled: locked || (!canNavigate && !state.selectedAnswer) }} hitSlop={{ top: 2, bottom: 2 }}
-          style={{ height: 40, minWidth: 96, maxWidth: '46%', paddingHorizontal: 14, borderRadius: 10,
-            borderWidth: 1, borderColor: '#0871E8',
-            alignItems: 'center', justifyContent: 'center', backgroundColor: '#0877F9',
+          style={{ minHeight: 44, maxWidth: '46%', flexDirection: 'row', gap: 5,
+            alignItems: 'center', justifyContent: 'center',
             opacity: locked || (!canNavigate && !state.selectedAnswer) ? 0.45 : 1 }}
           onPress={() => { if (canNavigate) void next(); else void model.submit(); }}>
-          {state.busy ? <ActivityIndicator color="white" /> : <Text style={{ fontSize: 15, lineHeight: 21, fontWeight: '600', color: '#FFFFFF' }}>
-            {canNavigate ? nextId ? 'Câu tiếp' : mode === 'review' ? unanswered && !readOnly ? 'Câu tiếp' : 'Kết thúc' : 'Kết thúc' : 'Kiểm tra'}
+          {state.busy ? <ActivityIndicator color="#0877F9" /> : <Text style={{ fontSize: 16, lineHeight: 24, fontWeight: '600', color: canNavigate ? '#111827' : '#16A34A' }}>
+            {canNavigate ? nextId ? 'Câu tiếp' : studyMode === 'review' ? unanswered && !readOnly ? 'Câu tiếp' : 'Kết thúc' : 'Kết thúc' : 'Kiểm tra'}
           </Text>}
+          {!state.busy && <SymbolView name={{ ios: canNavigate ? nextId ? 'chevron.right' : 'checkmark' : 'checkmark', android: canNavigate && nextId ? 'chevron_right' : 'check', web: canNavigate && nextId ? 'chevron_right' : 'check' }} size={16} tintColor={canNavigate ? '#111827' : '#16A34A'} />}
         </Pressable>
       </View>
     </View>
-    <ChapterQuestionNavigator data={data} open={navigatorOpen} close={() => setNavigatorOpen(false)} onSelect={(id) => { void model.move(id); }} />
+    <ChapterQuestionNavigator data={data} open={navigatorOpen} close={() => setNavigatorOpen(false)} disabled={locked}
+      onSelect={(id) => { void model.move(id); }} />
   </View></>;
 }
 

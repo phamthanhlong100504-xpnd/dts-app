@@ -1,6 +1,6 @@
 import { learnerRequest, reloadLearnerProfile } from '../session/session-service';
 import { currentStudyScope } from './question-catalog-service';
-import { answerOf, idOf, invalidStudy, listOf, objectOf, questionOf, textOf, uniqueIds, withReferenceAnswers } from './study-contract';
+import { answerOf, countOf, idOf, invalidStudy, listOf, objectOf, questionOf, textOf, uniqueIds, withReferenceAnswers } from './study-contract';
 import { assertStudyScope } from './study-service';
 import type { ChapterStudy, StudyMode, StudyScope } from './study-types';
 
@@ -68,19 +68,25 @@ export async function openCriticalStudy(mode: StudyMode, licenseClass: string, e
   uniqueIds(references);
   if (references.length !== idOf(catalog.criticalQuestions) || overview.totalQuestions !== references.length) invalidStudy();
   const keep = existing?.collection === 'critical' && existing.scope.version === scope.version &&
-    existing.scope.userId === scope.userId && existing.scope.licenseClass === licenseClass && existing.mode === mode ? existing : null;
+    existing.scope.userId === scope.userId && existing.scope.licenseClass === licenseClass ? existing : null;
   if (keep && keep.scope.bankVersion !== fullScope.bankVersion) invalidStudy();
-  if (!keep && mode === 'review' && overview.learnedQuestions !== references.length) invalidStudy();
+  const learned = countOf(overview.learnedQuestions);
+  if (learned > references.length) invalidStudy();
+  if (!keep && mode === 'review' && learned !== references.length) invalidStudy();
+  // Home has no mode parameter. Practice decides whether learning is complete;
+  // a fresh entry then starts/resumes REVIEW instead of conflicting with it.
+  // Reloads retain the exact known session, even after its last answer commits.
+  const effectiveMode: StudyMode = keep?.mode ?? (learned === references.length ? 'review' : 'learn');
   ensureCurrent(); assertStudyScope(scope);
   const raw = keep ? await learnerRequest<unknown>(sessionPath(keep)) : await learnerRequest<unknown>(prefix + '/sessions', {
-    method: 'POST', body: JSON.stringify({ licenseClass, mode: mode === 'review' ? 'REVIEW' : 'CONTINUE', restart: false }),
+    method: 'POST', body: JSON.stringify({ licenseClass, mode: effectiveMode === 'review' ? 'REVIEW' : 'CONTINUE', restart: false }),
   });
   ensureCurrent(); assertStudyScope(scope);
   // A session may span chapters: validate every source chapter as well as IDs.
   for (const row of listOf(objectOf(raw).questions).map(objectOf)) {
     if (rawReferences.find((reference) => reference.id === row.questionId)?.chapter !== row.chapterId) invalidStudy();
   }
-  const next = parseSession(raw, fullScope, mode, references);
+  const next = parseSession(raw, fullScope, effectiveMode, references);
   if (keep) validateSession(keep, next);
   return next;
 }
