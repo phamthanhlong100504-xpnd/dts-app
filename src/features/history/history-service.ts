@@ -104,7 +104,7 @@ export async function getHistoryReview(resultId: string, licenseClass: string): 
   if (!sourceId || history.reviewAvailable === false) throw new DtsApiError('Bài làm này hiện không cho phép xem lại câu hỏi.');
   const raw = objectOf(await learnerRequest<unknown>(`/api/practice/v1/exams/${encodeURIComponent(sourceId)}/result`));
   assertStudyScope(scope);
-  if (raw.examId !== sourceId || raw.examType !== licenseClass || raw.status !== 'COMPLETED' || typeof raw.passed !== 'boolean') invalidStudy();
+  if (raw.examId !== sourceId || raw.examType !== licenseClass || !['COMPLETED', 'TIMEOUT'].includes(String(raw.status)) || typeof raw.passed !== 'boolean') invalidStudy();
   const questions = listOf(raw.answers).map((value) => {
     const row = objectOf(value), question = questionOf({ ...row, id: row.questionId });
     const selectedAnswer = row.selectedAnswer === '' || row.selectedAnswer == null ? null : textOf(row.selectedAnswer);
