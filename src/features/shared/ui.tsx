@@ -1,6 +1,7 @@
 import { useState, type ReactNode, type ComponentProps } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
+import { userMessage, type MessageContext } from './user-message';
 export const colors = { blue: '#0877F9', ink: '#111827', muted: '#4B5563', line: '#E5E7EB', surface: '#F3F4F6' };
 export function AppIcon({ name, size = 24, color = colors.blue }: { name: string; size?: number; color?: string }) {
   const icons: Record<string, NonNullable<ComponentProps<typeof SymbolView>['name']>> = {
@@ -32,8 +33,8 @@ export function AppButton({ label, onPress, busy, secondary, disabled }: { label
     {busy ? <ActivityIndicator color={secondary ? colors.blue : '#FFFFFF'} /> : <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', color: secondary ? colors.blue : '#FFFFFF' }}>{label}</Text>}
   </Pressable>;
 }
-export function Message({ children, kind = 'error' }: { children: ReactNode; kind?: 'error' | 'info' }) {
+export function Message({ children, kind = 'error', context = 'general' }: { children: ReactNode; kind?: 'error' | 'info'; context?: MessageContext }) {
   return <View accessibilityLiveRegion="polite" style={{ padding: 12, borderRadius: 10, backgroundColor: kind === 'error' ? '#FEF2F2' : '#EFF6FF', marginVertical: 8 }}>
-    <Text selectable style={{ fontSize: 15, lineHeight: 22, color: kind === 'error' ? '#B91C1C' : '#1E40AF' }}>{children}</Text>
+    <Text selectable style={{ fontSize: 15, lineHeight: 22, color: kind === 'error' ? '#B91C1C' : '#1E40AF' }}>{kind === 'error' && (typeof children === 'string' || children instanceof Error) ? userMessage(children, context) : children}</Text>
   </View>;
 }

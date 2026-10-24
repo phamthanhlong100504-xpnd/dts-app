@@ -50,7 +50,7 @@ export default function AuthScreen({ kind }: { kind: 'login' | 'register' | 'for
         <FormField label="Ngày sinh (dd/mm/yyyy)" placeholder="Ví dụ: 20/10/2000" {...field('birth')} keyboardType="numbers-and-punctuation" maxLength={10} />
         <FormField label="Số điện thoại" placeholder="Nhập số điện thoại liên hệ" {...field('phone')} keyboardType="phone-pad" autoComplete="tel" />
       </>}
-      {error && <Message>{error}</Message>}
+      {error && <Message context={kind === 'login' ? 'login' : kind === 'register' ? 'register' : 'password'}>{error}</Message>}
       {kind === 'login' && <Pressable accessibilityRole="button" disabled={busy} onPress={() => router.push('/forgot-password')} style={{ alignSelf: 'flex-end', paddingVertical: 12, minHeight: 44 }}><Text style={{ color: '#0877F9', fontSize: 15, fontWeight: '500' }}>Quên mật khẩu?</Text></Pressable>}
       <View style={{ marginTop: kind === 'login' ? 6 : 20 }}><AppButton label={kind === 'login' ? 'Đăng nhập' : kind === 'register' ? 'Đăng ký' : phase === 'request' ? 'Gửi mã xác nhận' : 'Đặt lại mật khẩu'} busy={busy} onPress={() => { void submit(); }} /></View>
       {kind === 'forgot' && phase === 'reset' && <Pressable accessibilityRole="button" disabled={busy} onPress={() => { setPhase('request'); setError(null); }} style={{ alignSelf: 'center', padding: 12 }}><Text style={{ fontSize: 15, color: '#0877F9' }}>Thay tài khoản hoặc gửi lại mã</Text></Pressable>}

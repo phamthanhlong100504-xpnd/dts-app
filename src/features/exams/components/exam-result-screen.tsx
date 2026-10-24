@@ -93,7 +93,7 @@ function ReviewContent({ id }: { id: string }) {
       <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 16) }}><AppButton label="Về trang chủ" onPress={() => router.dismissTo('/home')} /></View>
     </View>
     <Sheet visible={!!question} title="Xem lại câu hỏi" close={() => setQuestionId(null)}>
-      {data && question && <><ResultQuestion question={question} position={index + 1} data={data} /><View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}><TextAction label="Câu trước" icon="left" disabled={index <= 0} onPress={() => setQuestionId(data.questions[index - 1].id)} /><TextAction label="Câu tiếp" icon="right" disabled={index === data.questions.length - 1} onPress={() => setQuestionId(data.questions[index + 1].id)} /></View><View style={{ alignSelf: 'center', marginTop: 12 }}><AppButton secondary label="Đóng" onPress={() => setQuestionId(null)} /></View></>}
+      {data && question && <><ResultQuestion question={question} position={index + 1} data={data} /><View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}><TextAction label="Câu trước" icon="left" disabled={index <= 0} onPress={() => setQuestionId(data.questions[index - 1].id)} /><TextAction label="Câu tiếp" icon="right" disabled={index === data.questions.length - 1} onPress={() => setQuestionId(data.questions[index + 1].id)} /></View></>}
     </Sheet>
   </>;
 }

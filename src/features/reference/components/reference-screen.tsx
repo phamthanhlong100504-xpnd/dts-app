@@ -1,9 +1,10 @@
+import { BottomSheet } from '../../shared/question-sheet';
 import { useCallback, useState } from 'react';
 import { Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useSignFilters } from '../use-sign-filters';
-import { ActivityIndicator, FlatList, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StudyAccess } from '../../session/components/study-access';
 import { useLearnerResource } from '../../session/use-learner-resource';
@@ -21,11 +22,12 @@ function SignImage({ id }: { id: string }) {
 }
 function SignDetail({ id, close }: { id: string; close: () => void }) {
   const loader = useCallback(() => getSign(id), [id]), resource = useLearnerResource('sign-detail:' + id, loader), insets = useSafeAreaInsets();
-  return <Modal transparent animationType="slide" onRequestClose={close}><View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#00000066', paddingTop: insets.top + 30 }}><View style={{ backgroundColor: '#FFFFFF', maxHeight: '95%', borderTopLeftRadius: 22, borderTopRightRadius: 22 }}><ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 20 }}>
+  return <BottomSheet visible close={close} topInset={insets.top + 30}
+    panelStyle={{ maxHeight: '95%', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 0, paddingBottom: 0 }}
+    contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 20 }}>
     {resource.loading && <ActivityIndicator color="#0877F9" />}{resource.error && <><Message>{resource.error}</Message><AppButton secondary label="Thử lại" onPress={resource.reload} /></>}
     {resource.data && <><SignImage id={resource.data.mediaFileId} /><Text style={{ marginTop: 16, fontSize: 21, fontWeight: '600', color: '#111827' }}>{resource.data.code} · {resource.data.name}</Text><Text style={{ marginTop: 8, color: '#4B5563', fontSize: 15 }}>{resource.data.groupName}</Text><Text style={{ marginTop: 20, fontSize: 17, color: '#111827', fontWeight: '600' }}>Ý nghĩa</Text><Text style={{ fontSize: 16, color: '#374151', lineHeight: 26, marginTop: 8 }}>{resource.data.meaning}</Text>{resource.data.memoryTip && <><Text style={{ fontSize: 17, fontWeight: '600', color: '#111827', marginTop: 18 }}>Mẹo ghi nhớ</Text><Text style={{ fontSize: 16, lineHeight: 26, color: '#4B5563', marginTop: 8 }}>{resource.data.memoryTip}</Text></>}</>}
-    <View style={{ marginTop: 22, alignSelf: 'center' }}><AppButton secondary label="Đóng" onPress={close} /></View>
-  </ScrollView></View></View></Modal>;
+  </BottomSheet>;
 }
 function SignsContent() {
   const { group, query, setQuery, search, page, chooseGroup, choosePage } = useSignFilters();

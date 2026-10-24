@@ -1,3 +1,4 @@
+import { answerText, explanationText, questionText } from '../../shared/question-text';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -45,7 +46,7 @@ export function ChapterQuestionContent({ data, state, model, canSkip, onSkip }: 
     {question.isCritical && data.collection !== 'critical' && <View className="mb-4 rounded-xl bg-orange-50 px-4 py-3">
       <Text className="text-base font-semibold text-orange-800">CÂU ĐIỂM LIỆT</Text>
     </View>}
-    <Text className="mb-4 text-gray-900" style={{ fontSize: 18, fontWeight: '600', lineHeight: 27 }}>
+    <Text className="mb-4 text-gray-900" style={{ ...questionText, fontWeight: '600', lineHeight: 27 }}>
       Câu {position + 1}/{data.questions.length}: {question.text}
     </Text>
     <QuestionImage key={question.id} question={question} scope={data.scope} />
@@ -59,9 +60,9 @@ export function ChapterQuestionContent({ data, state, model, canSkip, onSkip }: 
         style={{ backgroundColor: correctChoice ? '#DCFCE7' : wrongChoice ? '#FEE2E2' : selected ? '#EFF6FF' : '#F3F4F6',
           borderColor: correctChoice ? '#16A34A' : wrongChoice ? '#EF4444' : selected ? '#0877F9' : 'transparent', borderWidth: 1 }}>
         <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-white">
-          <Text className="text-lg font-bold text-gray-900">{choice.key}</Text>
+          <Text className="text-lg font-bold text-gray-900" style={answerText}>{choice.key}</Text>
         </View>
-        <Text className="flex-1 text-lg leading-7 text-gray-900">{choice.text}</Text>
+        <Text className="flex-1 text-lg leading-7 text-gray-900" style={answerText}>{choice.text}</Text>
       </Pressable>;
     })}
     <View className="mb-1 mt-1 flex-row items-center justify-between">
@@ -82,13 +83,13 @@ export function ChapterQuestionContent({ data, state, model, canSkip, onSkip }: 
       </Pressable>}
     </View>
     {feedbackOpen && <View className="mt-2 rounded-xl border border-blue-100 bg-blue-50 p-4">
-      <Text className="text-lg font-semibold leading-7 text-gray-900">
+      <Text className="text-lg font-semibold leading-7 text-gray-900" style={answerText}>
         Đáp án đúng: {correctAnswer}
       </Text>
-      <Text className="mt-3 text-lg font-semibold leading-7 text-gray-900">Giải thích</Text>
+      <Text className="mt-3 text-lg font-semibold leading-7 text-gray-900" style={answerText}>Giải thích</Text>
       {splitExplanationParagraphs(explanation || 'Chưa có giải thích cho câu này.').map((paragraph, index) =>
         <Text key={index} className="text-lg leading-7 text-gray-800"
-          style={{ marginTop: index === 0 ? 4 : 10 }}>{paragraph}</Text>)}
+          style={{ ...explanationText, marginTop: index === 0 ? 4 : 10 }}>{paragraph}</Text>)}
     </View>}
   </>;
 }

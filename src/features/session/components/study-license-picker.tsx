@@ -1,3 +1,4 @@
+import { userMessage } from '../../shared/user-message';
 import { useEffect, useState } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
@@ -27,7 +28,7 @@ export function LicenseChoices({ onDone }: { onDone: () => void }) {
   }
   return <>
     {items === null && !error && <ActivityIndicator color="#0877F9" />}
-    {error && <Text selectable className="mb-3 text-base text-red-700">{error}</Text>}
+    {error && <Text selectable className="mb-3 text-base text-red-700">{userMessage(error)}</Text>}
     {items === null && error && <Pressable accessibilityRole="button" className="min-h-11 justify-center" onPress={() => { setError(null); setRetry((n) => n + 1); }}>
       <Text className="text-base font-semibold text-blue-700">Thử lại</Text>
     </Pressable>}

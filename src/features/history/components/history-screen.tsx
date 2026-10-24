@@ -1,3 +1,4 @@
+import { userMessage } from '../../shared/user-message';
 import { SymbolView } from 'expo-symbols';
 import { Stack, router } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -90,7 +91,7 @@ function HistoryContent({ licenseClass }: { licenseClass: string }) {
           </Pressable>)}
       </View>
       {loading && <ActivityIndicator color="#0877F9" />}
-      {error && <View className="mb-3 rounded-xl bg-red-50 p-4"><Text selectable className="text-base text-red-700">{error}</Text>
+      {error && <View className="mb-3 rounded-xl bg-red-50 p-4"><Text selectable className="text-base text-red-700">{userMessage(error)}</Text>
         <Pressable accessibilityRole="button" onPress={reload} className="mt-2 min-h-11 justify-center"><Text className="text-base font-semibold text-blue-700">Thử lại</Text></Pressable></View>}
       {data && <>
         {!data.items.length && <View className="mt-4 items-center rounded-2xl bg-gray-100 p-6">

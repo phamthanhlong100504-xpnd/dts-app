@@ -1,3 +1,4 @@
+import { userMessage } from '../../shared/user-message';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
@@ -48,7 +49,7 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
   </View></>;
   if (!data) return <>{header}<View className="flex-1 justify-center bg-white px-6">
     <Text className="text-lg font-semibold text-red-700">Chưa tải được dữ liệu câu hỏi.</Text>
-    <Text selectable className="mt-3 text-base text-red-700">{state.error}</Text>
+    <Text selectable className="mt-3 text-base text-red-700">{userMessage(state.error)}</Text>
     <Pressable accessibilityRole="button" className="mt-4 min-h-12 justify-center" onPress={() => { void model.load(); }}>
       <Text className="text-base font-semibold text-blue-700">Thử đọc lại từ máy chủ</Text>
     </Pressable><BackToChapters wrong={chapterId === 'wrong'} />
@@ -73,10 +74,10 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
     else await model.finish();
   }
   const errorPanel = state.error && <View className="mb-4 rounded-xl bg-red-50 p-4">
-    <Text selectable className="text-base text-red-700">{state.error}</Text>
-    <Text className="mt-2 text-sm text-gray-700">Đọc lại dữ liệu để xác nhận trạng thái đã lưu trước khi thao tác tiếp.</Text>
+    <Text selectable className="text-base text-red-700">{userMessage(state.error)}</Text>
+    <Text className="mt-2 text-sm text-gray-700">Tải lại để xem kết quả đã lưu trước khi tiếp tục.</Text>
     <Pressable accessibilityRole="button" disabled={state.busy} className="mt-2 min-h-11 justify-center" onPress={() => { void model.load(); }}>
-      <Text className="text-base font-semibold text-blue-700">Đọc lại từ máy chủ</Text>
+      <Text className="text-base font-semibold text-blue-700">Tải lại bài học</Text>
     </Pressable>
   </View>;
 
@@ -86,8 +87,8 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
     <Text className="mt-3 text-center text-lg text-gray-700">Đã trả lời {learnedCount}/{data.questions.length} câu</Text>
     <Text className="mt-2 text-center text-lg text-gray-700">Đúng {correct} · Sai {answers.length - correct} · Còn {data.questions.length - learnedCount}</Text>
     <Text className="mt-3 text-center text-base text-gray-600">{studyMode === 'review'
-      ? 'Kết quả vòng ôn tập được lưu riêng tại Practice.'
-      : 'Đáp án và vị trí học đã được đọc lại từ Practice. Các câu bỏ qua vẫn chưa được tính là đã học.'}</Text>
+      ? 'Kết quả lượt ôn đã được lưu riêng với tiến độ học.'
+      : 'Đáp án và vị trí học đã được cập nhật. Các câu bỏ qua vẫn chưa được tính là đã học.'}</Text>
     {data.wrongSummary && <Text className="mt-3 text-center text-lg font-semibold text-blue-700">
       Hiện còn {data.wrongSummary.remainingCount} câu cần ôn
     </Text>}

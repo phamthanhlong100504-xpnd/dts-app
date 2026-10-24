@@ -1,3 +1,4 @@
+import { userMessage } from '../../shared/user-message';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback } from 'react';
@@ -89,7 +90,7 @@ function ReviewContent({ resultId }: { resultId: string }) {
       headerShadowVisible: true, headerRight: () => <StudyLicensePicker /> }} />
     {loading && <View className="flex-1 items-center justify-center bg-white"><ActivityIndicator size="large" color="#0877F9" />
       <Text className="mt-3 text-base text-gray-600">Đang tải kết quả...</Text></View>}
-    {error && <View className="flex-1 justify-center bg-white p-6"><Text selectable className="text-base leading-7 text-red-700">{error}</Text>
+    {error && <View className="flex-1 justify-center bg-white p-6"><Text selectable className="text-base leading-7 text-red-700">{userMessage(error)}</Text>
       <Pressable accessibilityRole="button" onPress={reload} className="mt-3 min-h-11 justify-center">
         <Text className="text-base font-semibold text-blue-700">Thử lại</Text></Pressable></View>}
     {data && <FlatList className="flex-1 bg-gray-50" data={data.questions} keyExtractor={(question) => String(question.id)}

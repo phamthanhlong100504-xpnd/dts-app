@@ -1,3 +1,5 @@
+import { questionText } from '../../shared/question-text';
+import { userMessage } from '../../shared/user-message';
 import { Stack, router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
@@ -73,7 +75,7 @@ function ChaptersContent() {
             {search.loading ? 'Đang tìm trong bộ câu hỏi...' : search.error ? 'Chưa tìm được câu hỏi' : `${search.results.length} câu phù hợp · Hạng ${data.licenseClass}`}
           </Text>}
           ListEmptyComponent={search.loading ? <ActivityIndicator color="#0877F9" /> : search.error ?
-            <View className="rounded-xl bg-red-50 p-4"><Text className="text-base text-red-700">{search.error}</Text>
+            <View className="rounded-xl bg-red-50 p-4"><Text className="text-base text-red-700">{userMessage(search.error)}</Text>
               <Pressable accessibilityRole="button" onPress={search.reload} className="mt-2 min-h-11 justify-center">
                 <Text className="text-base font-semibold text-blue-700">Thử tìm lại</Text>
               </Pressable></View> : <Text className="text-base leading-6 text-gray-600">Không có câu hỏi phù hợp. Thử từ khóa khác.</Text>}
@@ -81,13 +83,13 @@ function ChaptersContent() {
             accessibilityLabel={`Mở câu ${item.position}: ${item.question.text}`}
             onPress={() => open(item.chapterId, 0, 1, item.question.id)} className="mb-3 rounded-2xl bg-gray-100 p-4">
             <Text className="mb-2 text-sm font-semibold text-blue-700">Câu {item.position} · Chương {ROMAN[item.chapterId] ?? item.chapterId}</Text>
-            <Text className="text-lg leading-7 text-gray-900">{item.question.text}</Text>
+            <Text className="text-lg leading-7 text-gray-900" style={questionText}>{item.question.text}</Text>
           </Pressable>} /> :
         <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
           {loading ? <ActivityIndicator size="large" color="#0877F9" /> : error ?
             <View className="rounded-2xl bg-red-50 p-4">
-              <Text selectable className="text-base text-red-700">{error}</Text>
+              <Text selectable className="text-base text-red-700">{userMessage(error)}</Text>
               <Pressable accessibilityRole="button" className="mt-3 min-h-11 justify-center" onPress={reload}>
                 <Text className="text-base font-semibold text-blue-700">Thử lại</Text>
               </Pressable>

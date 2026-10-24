@@ -1,3 +1,4 @@
+import { userMessage } from '../../shared/user-message';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
@@ -34,7 +35,7 @@ function QuestionImageResource({ question, scope, retry, onRetry }: {
       }} />}
     {loading && !error && <ActivityIndicator color="#0877F9" style={{ position: 'absolute' }} />}
     {error && <View className="items-center px-4">
-      <Text className="text-center text-sm text-gray-600">{error}</Text>
+      <Text className="text-center text-sm text-gray-600">{userMessage(error)}</Text>
       <Pressable accessibilityRole="button" className="mt-2 min-h-11 justify-center" onPress={onRetry}>
         <Text className="text-base font-semibold text-blue-700">Tải lại ảnh</Text>
       </Pressable>

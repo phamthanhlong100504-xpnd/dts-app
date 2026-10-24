@@ -1,16 +1,46 @@
 import { SymbolView } from 'expo-symbols';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import type { ReactNode } from 'react';
+import { Animated, Modal, PanResponder, Pressable, ScrollView, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { canDragSheet, shouldDismissSheet } from './sheet-swipe';
 
-export function BottomSheet({ visible, title, close, children }: { visible: boolean; title: string; close: () => void; children: ReactNode }) {
-  return <Modal transparent visible={visible} animationType="slide" onRequestClose={close}>
-    <View style={{ flex: 1, backgroundColor: '#00000066', justifyContent: 'flex-end' }}>
+function sheetGestureHandlers(translateY: Animated.Value, close: () => void) {
+  const restore = () => Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+  return {
+    onStartShouldSetPanResponder: () => false,
+    onPanResponderGrant: () => translateY.stopAnimation(),
+    onPanResponderMove: (_: unknown, gesture: { dy: number }) => translateY.setValue(Math.max(0, gesture.dy)),
+    onPanResponderRelease: (_: unknown, gesture: { dx: number; dy: number; vy: number }) => {
+      if (shouldDismissSheet(gesture)) { translateY.setValue(0); close(); }
+      else restore();
+    },
+    onPanResponderTerminate: restore,
+  };
+}
+
+export function BottomSheet({ visible, title, close, children, topInset = 0, panelStyle, contentContainerStyle }: {
+  visible: boolean; title?: string; close: () => void; children: ReactNode;
+  topInset?: number; panelStyle?: StyleProp<ViewStyle>; contentContainerStyle?: StyleProp<ViewStyle>;
+}) {
+  const [atTop, setAtTop] = useState(true), [translateY] = useState(() => new Animated.Value(0));
+  useEffect(() => { if (visible) translateY.setValue(0); }, [visible, translateY]);
+  const responders = useMemo(() => ({
+    body: PanResponder.create({ ...sheetGestureHandlers(translateY, close),
+      onMoveShouldSetPanResponderCapture: (_, gesture) => canDragSheet(gesture, atTop ? 0 : 1) }),
+    header: PanResponder.create({ ...sheetGestureHandlers(translateY, close),
+      onMoveShouldSetPanResponderCapture: (_, gesture) => canDragSheet(gesture, 0) }),
+  }), [close, translateY, atTop]);
+  return <Modal transparent visible={visible} animationType="slide" onRequestClose={close} onShow={() => setAtTop(true)}>
+    <View style={{ flex: 1, backgroundColor: '#00000066', justifyContent: 'flex-end', paddingTop: topInset }}>
       <Pressable accessibilityRole="button" accessibilityLabel="Đóng hộp thoại" onPress={close} style={{ flex: 1 }} />
-      <View accessibilityViewIsModal style={{ maxHeight: '82%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#FFFFFF', padding: 22, paddingBottom: 30 }}>
-        <View style={{ width: 42, height: 5, backgroundColor: '#D1D5DB', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
-        <Text style={{ fontSize: 21, lineHeight: 28, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 18 }}>{title}</Text>
-        <ScrollView bounces={false} style={{ flexGrow: 0 }}>{children}</ScrollView>
-      </View>
+      <Animated.View accessibilityViewIsModal onAccessibilityEscape={close} {...responders.body.panHandlers}
+        style={[{ maxHeight: '82%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#FFFFFF', padding: 22, paddingBottom: 30 }, panelStyle, { transform: [{ translateY }] }]}>
+        {title && <View {...responders.header.panHandlers}>
+          <View style={{ width: 42, height: 5, backgroundColor: '#D1D5DB', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
+          <Text style={{ fontSize: 21, lineHeight: 28, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 18 }}>{title}</Text>
+        </View>}
+        <ScrollView bounces={false} scrollEventThrottle={16} onScroll={(event) => setAtTop(event.nativeEvent.contentOffset.y <= 0)}
+          style={{ flexGrow: 0 }} contentContainerStyle={contentContainerStyle}>{children}</ScrollView>
+      </Animated.View>
     </View>
   </Modal>;
 }

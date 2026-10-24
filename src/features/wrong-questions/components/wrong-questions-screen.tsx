@@ -1,3 +1,4 @@
+import { userMessage } from '../../shared/user-message';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
@@ -38,7 +39,7 @@ function WrongQuestionsContent({ licenseClass, initialFilter }: { licenseClass: 
       </View>
       <FlatList key={filter} className="flex-1" data={rows} keyExtractor={(row) => String(row.question.id)}
         refreshing={loading} onRefresh={reload} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, flexGrow: 1 }}
-        ListHeaderComponent={error ? <View className="mb-4 rounded-xl bg-red-50 p-4"><Text selectable className="text-base text-red-700">{error}</Text>
+        ListHeaderComponent={error ? <View className="mb-4 rounded-xl bg-red-50 p-4"><Text selectable className="text-base text-red-700">{userMessage(error)}</Text>
           <Pressable accessibilityRole="button" onPress={reload} className="mt-2 min-h-11 justify-center">
             <Text className="text-base font-semibold text-blue-700">Thử lại</Text>
           </Pressable></View> : null}

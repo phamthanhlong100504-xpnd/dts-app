@@ -45,7 +45,7 @@ export default function ProfileScreen() {
       {profile.emailVerifiedAt === null && <View style={{ marginTop: 16 }}><AppButton secondary label="Xác thực email" onPress={() => { setError(null); setNotice(null); setPanel('verify'); }} /></View>}
       <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827', marginTop: 24, marginBottom: 12 }}>Bảo mật</Text>
       <AppButton secondary label="Đổi mật khẩu" onPress={() => { setError(null); setNotice(null); setPanel('password'); }} />
-      <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(async () => { await logoutAccount(); router.replace('/login'); }); }} style={{ alignSelf: 'center', minHeight: 46, marginTop: 20, backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>Đăng xuất</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(async () => { await logoutAccount(); router.replace('/login'); }); }} style={{ alignSelf: 'stretch', minHeight: 46, marginTop: 20, backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>Đăng xuất</Text></Pressable>
     </ScrollView>
     <Modal visible={!!panel} transparent animationType="fade" onRequestClose={close}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 18, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12, backgroundColor: '#00000066' }}>
@@ -61,12 +61,12 @@ export default function ProfileScreen() {
               <FormField label="Mã xác nhận" value={code} onChangeText={setCode} editable={!busy} keyboardType="number-pad" textContentType="oneTimeCode" />
               <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(async () => { await sendRegistrationCode(profile.email); setNotice('Đã yêu cầu gửi mã. Kiểm tra email và thư rác.'); }); }} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}><Text style={{ fontSize: 15, color: '#0877F9' }}>Gửi lại mã xác nhận</Text></Pressable>
             </>}
-            {error && <Message>{error}</Message>}{notice && <Message kind="info">{notice}</Message>}
+            {error && <Message context={panel === 'password' ? 'password' : 'general'}>{error}</Message>}{notice && <Message kind="info">{notice}</Message>}
             <View style={{ marginTop: 18, gap: 10 }}>
               <AppButton busy={busy} label={panel === 'password' ? 'Cập nhật mật khẩu' : 'Xác nhận'} onPress={() => { void run(async () => {
                 if (panel === 'password') { if (newPassword !== confirmation) throw new Error('Mật khẩu xác nhận chưa khớp.'); await changeAccountPassword(oldPassword, newPassword); router.replace('/login'); }
                 else { await verifyRegistrationCode(profile.email, code); setNotice('Email đã được xác thực.'); setPanel(null); resource.reload(); }
-              }); }} /><View style={{ alignSelf: 'center' }}><AppButton secondary disabled={busy} label="Đóng" onPress={close} /></View>
+              }); }} /><AppButton secondary disabled={busy} label="Đóng" onPress={close} />
             </View>
           </View>
         </ScrollView>
