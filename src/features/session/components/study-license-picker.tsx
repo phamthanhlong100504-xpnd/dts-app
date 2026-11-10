@@ -1,10 +1,11 @@
 import { userMessage } from '../../shared/user-message';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SymbolView } from 'expo-symbols';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, PanResponder, Pressable, ScrollView, Text, View } from 'react-native';
 import { chooseLearnerLicense, getLicenseCatalog } from '../session-service';
 import { useLearnerSession } from '../session-store';
 import type { LicenseItem } from '../types';
+import { canDragSheet, shouldDismissSheet } from '../../shared/sheet-swipe';
 
 export function LicenseChoices({ onDone }: { onDone: () => void }) {
   const selected = useLearnerSession((state) => state.session?.profile.selectedLicenseClass);
@@ -49,6 +50,11 @@ export function LicenseChoices({ onDone }: { onDone: () => void }) {
 
 export function StudyLicensePicker() {
   const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const dismiss = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => canDragSheet(gesture, 0),
+    onPanResponderRelease: (_, gesture) => { if (shouldDismissSheet(gesture)) close(); },
+  }), [close]);
   const profile = useLearnerSession((state) => state.session?.profile);
   return <>
     <Pressable accessibilityRole="button" accessibilityLabel="Chọn hạng bằng" accessibilityState={{ expanded: open }}
@@ -59,12 +65,9 @@ export function StudyLicensePicker() {
     <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
       <View className="flex-1 items-center justify-center bg-black/40 px-6 py-8">
         <Pressable accessibilityRole="button" accessibilityLabel="Đóng bảng chọn hạng" className="absolute inset-0" onPress={() => setOpen(false)} />
-        <View accessibilityViewIsModal className="w-full max-w-sm rounded-2xl bg-white p-5" style={{ maxHeight: '85%' }}>
-          <Text className="mb-4 text-center text-xl font-bold text-gray-900">Chọn bằng lái</Text>
+        <View accessibilityViewIsModal onAccessibilityEscape={close} className="w-full max-w-sm rounded-2xl bg-white p-5" style={{ maxHeight: '85%' }}>
+          <View {...dismiss.panHandlers}><Text className="mb-4 text-center text-xl font-bold text-gray-900">Chọn bằng lái</Text></View>
           <LicenseChoices onDone={() => setOpen(false)} />
-          <Pressable accessibilityRole="button" className="mt-4 min-h-11 self-center items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-7" onPress={() => setOpen(false)}>
-            <Text className="text-base font-semibold text-blue-700">Đóng</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>

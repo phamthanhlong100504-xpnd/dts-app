@@ -1,25 +1,16 @@
-import { userMessage } from '../../shared/user-message';
 import { SymbolView } from 'expo-symbols';
 import { Stack, router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { StudyAccess } from '../../session/components/study-access';
 import { StudyLicensePicker } from '../../session/components/study-license-picker';
 import { useLearnerSession } from '../../session/session-store';
 import { useLearnerResource } from '../../session/use-learner-resource';
-import { getHistoryOverview, type HistoryActivity, type HistoryItem } from '../history-service';
+import { SimulationHistoryList } from '../../simulations/components/simulation-history-list';
+import { getHistoryOverview, type HistoryItem } from '../history-service';
 import { historyCalendarDate, historyDate, historyDuration, historyTitle } from '../history-format';
+import { HistoryEmpty, HistoryPagination, HistoryReadError, HistorySummary, HistoryTabs, type HistoryMode, type HistoryModule } from './history-presentation';
 
-function SummaryCell({ value, label, icon }: { value: number | null; label: string; icon: 'total' | 'passed' | 'failed' }) {
-  const color = icon === 'total' ? '#0877F9' : icon === 'passed' ? '#16A34A' : '#EF4444';
-  return <View className="flex-1 items-center justify-center px-1">
-    <SymbolView name={icon === 'total' ? { ios: 'square.and.pencil', android: 'edit_note', web: 'edit_note' } :
-      icon === 'passed' ? { ios: 'checkmark.circle', android: 'check_circle', web: 'check_circle' } :
-        { ios: 'xmark.circle', android: 'cancel', web: 'cancel' }} size={26} tintColor={color} />
-    <Text className="mt-2 text-xl font-semibold text-gray-900">{value ?? '—'}</Text>
-    <Text className="mt-1 text-center text-base text-gray-900">{label}</Text>
-  </View>;
-}
 function HistoryCard({ item }: { item: HistoryItem }) {
   const passed = item.result === 'PASSED';
   // History supplies the total and correct count, not an answered-wrong count.
@@ -64,54 +55,38 @@ function HistoryCard({ item }: { item: HistoryItem }) {
     </View>
   </Pressable>;
 }
-function HistoryContent({ licenseClass }: { licenseClass: string }) {
-  const [activity, setActivity] = useState<HistoryActivity>('RANDOM_EXAM');
+function TheoryHistoryList({ licenseClass, mode, controls }: { licenseClass: string; mode: HistoryMode; controls: ReactNode }) {
   const [page, setPage] = useState(0);
-  const key = JSON.stringify([activity, page]);
+  const activity = mode === 'RANDOM' ? 'RANDOM_EXAM' : 'PRESET_EXAM';
   const loader = useCallback(() => getHistoryOverview(licenseClass, { activity, outcome: 'ALL', period: 'ALL', page }), [licenseClass, activity, page]);
-  const { data, loading, error, reload } = useLearnerResource('history:' + key, loader);
+  const { data, loading, error, reload } = useLearnerResource('history-theory:' + mode + ':' + page, loader);
+  return <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 14 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />}>
+    <HistorySummary summary={data?.summary} />
+    {controls}
+    {loading && <ActivityIndicator color="#0877F9" />}
+    {error && <HistoryReadError error={error} reload={reload} />}
+    {data && <>
+      {!data.items.length && <HistoryEmpty />}
+      <View>{data.items.map(item => <HistoryCard key={item.id} item={item} />)}</View>
+      <HistoryPagination page={page} totalPages={data.totalPages} previous={() => setPage(value => Math.max(0, value - 1))} next={() => setPage(value => value + 1)} />
+    </>}
+  </ScrollView>;
+}
+function HistoryContent({ licenseClass }: { licenseClass: string }) {
+  const [module, setModule] = useState<HistoryModule>('THEORY'), [mode, setMode] = useState<HistoryMode>('RANDOM');
+  const controls = <View style={{ gap: 10 }}>
+    <HistoryTabs label="Nội dung lịch sử" options={[[ 'THEORY', 'Lý thuyết' ], [ 'SIMULATION', 'Mô phỏng' ]]} value={module} onSelect={setModule} />
+    <HistoryTabs label="Hình thức thi" options={[[ 'RANDOM', 'Ngẫu nhiên' ], [ 'PRESET', 'Bộ đề có sẵn' ]]} value={mode} onSelect={setMode} />
+  </View>;
   return <>
     <Stack.Screen options={{ headerShown: true, title: 'Lịch sử làm bài', headerTitleAlign: 'center', headerBackButtonDisplayMode: 'minimal',
       headerShadowVisible: true, headerRight: () => <StudyLicensePicker /> }} />
-    <ScrollView key={key} className="flex-1 bg-white" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />}>
-      <View className="mb-4 flex-row items-center rounded-2xl bg-gray-100 px-3 py-5">
-        <SummaryCell value={data?.summary.total ?? null} label="Lần thi" icon="total" />
-        <View className="h-16 w-px bg-blue-300" />
-        <SummaryCell value={data?.summary.passed ?? null} label="Đạt" icon="passed" />
-        <View className="h-16 w-px bg-blue-300" />
-        <SummaryCell value={data?.summary.failed ?? null} label="Chưa đạt" icon="failed" />
-      </View>
-      <View className="mb-4 flex-row rounded-xl bg-gray-100 p-1">
-        {([['RANDOM_EXAM', 'Ngẫu nhiên'], ['PRESET_EXAM', 'Bộ đề có sẵn']] as const).map(([value, label]) =>
-          <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: activity === value }}
-            onPress={() => { setActivity(value); setPage(0); }} className="min-h-11 flex-1 items-center justify-center rounded-lg"
-            style={{ backgroundColor: activity === value ? '#0877F9' : 'transparent' }}>
-            <Text className="font-semibold" style={{ fontSize: 16.5, color: activity === value ? '#FFFFFF' : '#374151' }}>{label}</Text>
-          </Pressable>)}
-      </View>
-      {loading && <ActivityIndicator color="#0877F9" />}
-      {error && <View className="mb-3 rounded-xl bg-red-50 p-4"><Text selectable className="text-base text-red-700">{userMessage(error)}</Text>
-        <Pressable accessibilityRole="button" onPress={reload} className="mt-2 min-h-11 justify-center"><Text className="text-base font-semibold text-blue-700">Thử lại</Text></Pressable></View>}
-      {data && <>
-        {!data.items.length && <View className="mt-4 items-center rounded-2xl bg-gray-100 p-6">
-          <Text className="text-center text-lg font-semibold text-gray-900">Chưa có lịch sử phù hợp</Text>
-          <Text className="mt-2 text-center text-base leading-6 text-gray-600">Các bài đã hoàn thành và được công bố kết quả sẽ xuất hiện tại đây.</Text>
-        </View>}
-        {data.items.map((item) => <HistoryCard key={item.id} item={item} />)}
-        <View className="mt-3 flex-row items-center justify-between">
-          <Pressable accessibilityRole="button" disabled={page === 0} onPress={() => setPage((value) => value - 1)}
-            className="min-h-11 justify-center px-2" style={{ opacity: page === 0 ? 0.4 : 1 }}><Text className="text-base font-semibold text-blue-700">Trang trước</Text></Pressable>
-          <Text className="text-base text-gray-700">{data.totalPages ? page + 1 : 0}/{data.totalPages}</Text>
-          <Pressable accessibilityRole="button" disabled={page + 1 >= data.totalPages} onPress={() => setPage((value) => value + 1)}
-            className="min-h-11 justify-center px-2" style={{ opacity: page + 1 >= data.totalPages ? 0.4 : 1 }}><Text className="text-base font-semibold text-blue-700">Trang tiếp</Text></Pressable>
-        </View>
-      </>}
-    </ScrollView>
+    {module === 'THEORY' ? <TheoryHistoryList key={licenseClass + mode} licenseClass={licenseClass} mode={mode} controls={controls} /> :
+      <SimulationHistoryList key={licenseClass + mode} mode={mode} controls={controls} />}
   </>;
 }
 function LicensedHistory() {
-  const licenseClass = useLearnerSession((state) => state.session!.profile.selectedLicenseClass!);
+  const licenseClass = useLearnerSession(state => state.session!.profile.selectedLicenseClass!);
   return <HistoryContent key={licenseClass} licenseClass={licenseClass} />;
 }
 export default function HistoryScreen() { return <StudyAccess><LicensedHistory /></StudyAccess>; }
