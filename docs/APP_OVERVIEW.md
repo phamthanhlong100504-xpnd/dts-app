@@ -1,16 +1,16 @@
 # DTS App — chức năng, cấu trúc và API của toàn bộ ứng dụng
 
-Tài liệu dành cho thành viên tiếp nhận và phát triển app trên nhánh `feature/mobile-full-integration`. Mô tả dựa trên source nhánh tích hợp và contract backend mới, không giả định backend main cũ đã được cập nhật. Khi triển khai đọc thêm [kết nối VPS](VPS_BACKEND_CONNECTION.md).
+Tài liệu dành cho thành viên tiếp nhận và phát triển app trên nhánh `feature/mobile-simulation-integration` (kế thừa `feature/mobile-full-integration`). Mô tả dựa trên source nhánh tích hợp và contract backend mới, không giả định backend main cũ đã được cập nhật. Khi triển khai đọc thêm [kết nối VPS](VPS_BACKEND_CONNECTION.md).
 
 ## 1. Phạm vi và nguồn dữ liệu
 
-App học lý thuyết GPLX sử dụng React Native, Expo SDK 57, Expo Router, TypeScript và NativeWind. Dữ liệu nghiệp vụ từ các backend DTS qua Gateway. Frontend web không cần chạy để mobile dùng API.
+App học lý thuyết và video mô phỏng GPLX sử dụng React Native, Expo SDK 58, Expo Router, TypeScript và NativeWind. Dữ liệu nghiệp vụ từ các backend DTS qua Gateway. Frontend web không cần chạy để mobile dùng API.
 
 | Màn/chức năng | Nội dung | Service nguồn |
 | --- | --- | --- |
 | Tài khoản | Đăng nhập, đăng ký, quên/reset mật khẩu, xác thực email, đổi mật khẩu, đăng xuất | Identity |
 | Chọn hạng | Danh mục hạng và hạng được xác nhận trong hồ sơ | Practice cung cấp danh mục; Identity lưu lựa chọn |
-| Trang chủ | Số câu, tiến độ, đúng/sai và tám card chức năng | Practice; hồ sơ Identity |
+| Trang chủ | Hạng trong card tiến độ, đúng/sai, tám card lý thuyết và card mô phỏng theo capability | Practice; hồ sơ Identity |
 | Đề ngẫu nhiên | Thông tin/chế độ, tạo bài, làm bài, tạm dừng/tiếp tục, nộp, kết quả/xem lại/làm lại | Practice |
 | Thi theo bộ đề | Bộ đề đã phát hành theo hạng, trạng thái và các luồng thi thử | Practice |
 | Ôn tập câu hỏi | Chương, cả bộ, tìm kiếm câu hỏi, học tiếp/ôn lại | Practice |
@@ -18,9 +18,10 @@ App học lý thuyết GPLX sử dụng React Native, Expo SDK 57, Expo Router, 
 | Các câu bị sai | Danh sách hiện tại, lọc nhóm, mở/trả lời/chấm, vuốt và chọn câu | Practice |
 | Các biển báo | Tìm theo tên/mã, nhóm, phân trang, chi tiết, ảnh | Practice; URL ảnh qua Media |
 | Mẹo ghi nhớ | Danh sách và nội dung mẹo từ server | Practice |
-| Lịch sử | Ngẫu nhiên/bộ đề, thống kê, phân trang và mở bài làm gốc | Result; kết quả nguồn ở Practice |
+| Video mô phỏng | Chương/tình huống, SPACE, luyện lại, thi ngẫu nhiên/bộ đề, tự nộp và xem lại | Practice, Media; chi tiết ở [SIMULATION_MODULE.md](SIMULATION_MODULE.md) |
+| Lịch sử | Lý thuyết/Mô phỏng rồi Ngẫu nhiên/Bộ đề; thống kê, phân trang và mở bài làm gốc | Result; kết quả nguồn ở Practice |
 
-Các bài thi mobile thuộc **Practice**, bao gồm chế độ mô phỏng thi thật. Lịch sử chỉ hiển thị `RANDOM_EXAM` và `PRESET_EXAM`. Nhánh này không triển khai luồng thi chính thức của Examination, quản trị, leaderboard hoặc analytics của bản web.
+Thi thử lý thuyết và thi thử video mô phỏng thuộc **Practice**. Lịch sử lý thuyết dùng `RANDOM_EXAM` / `PRESET_EXAM`; lịch sử mô phỏng dùng `SIM_RANDOM_EXAM` / `SIM_PRESET_EXAM` từ API riêng của Result. Nhánh này không triển khai luồng thi chính thức của Examination, quản trị, leaderboard hoặc analytics của bản web.
 
 ## 2. Kiến trúc và dữ liệu chuẩn
 
@@ -53,7 +54,8 @@ Zustand trong `features/session` giữ token/hồ sơ mới nhất trong bộ nh
 | `src/features/chapter-learning/` | Catalog, học/ôn chương/cả bộ/điểm liệt, tìm kiếm, ảnh, model/hook/screens |
 | `src/features/wrong-questions/` | Danh sách/filter, trả lời trực tiếp, model, vuốt/picker và adapter phiên chấm native |
 | `src/features/exams/` | Cấu hình/lobby, hai chế độ, phiên thi thử, kết quả, retry và xem đáp án |
-| `src/features/history/` | History Result, kiểm tra nguồn và mở kết quả Practice, định dạng UI |
+| `src/features/history/` | Lịch sử hai module và UI dùng chung; adapter và màn bài làm lý thuyết giữ độc lập |
+| `src/features/simulations/` | Native video, học/chấm/thi/xem lại mô phỏng và adapter lịch sử Result có mốc đồng bộ |
 | `src/features/reference/` | Biển báo, tìm kiếm/phân nhóm/phân trang và mẹo |
 | `src/features/shared/` | UI/icon/button/typography và bottom sheet/picker dùng chung |
 | `src/lib/api/http.ts` | Gateway origin, fetch, timeout, envelope/plain và lỗi/trace |
@@ -83,7 +85,11 @@ Khi bổ sung tính năng: entry ở `src/app`, UI ở feature, HTTP/DTO validat
 | `/preset-exams`, `/preset-exams/[presetId]` | Danh sách bộ đề và thông tin bộ được chọn |
 | `/practice/exam/[examId]` | Phiên thi thử đang làm/tạm dừng |
 | `/practice/result/[examId]`, `/practice/result/[examId]/review` | Kết quả và xem từng câu |
-| `/history`, `/history/[resultId]` | Lịch sử và bài làm nguồn |
+| `/history`, `/history/[resultId]` | Lịch sử hai module và bài làm lý thuyết theo Result history ID |
+| `/simulations`, `/simulations/scenarios/[scenarioId]` | Danh sách chương/tình huống và luyện video |
+| `/simulations/exams`, `/simulations/exams/random`, `/simulations/exams/presets`, `/simulations/exams/presets/[presetSetId]` | Sảnh, chuẩn bị và bộ đề mô phỏng |
+| `/simulations/exams/sessions/[sessionId]` | Bài mô phỏng đang làm |
+| `/simulations/exams/results/[sessionId]`, `/simulations/exams/review/[sessionId]` | Kết quả/video gốc của Practice; `from=history` chọn cách trở về lịch sử |
 | `/traffic-signs`, `/memory-tips` | Nội dung tham khảo |
 
 Route cũ `/practice/wrong` được giữ như redirect tới màn câu sai riêng; không phục hồi UI quản lý lượt ôn cũ. Params chỉ dùng điều hướng; service vẫn kiểm tra account, hạng, bank và ID. Title hoặc license trên route không xác nhận quyền sở hữu.
@@ -126,6 +132,10 @@ Bài đang làm và paused lấy từ server cùng ID, vị trí, số câu tr�
 Kết quả tách đúng/sai/chưa trả lời theo DTO. Thời gian làm bài tính từ các mốc kết quả và deadline phiên đã xác nhận, xét phần pause; thiếu/mâu thuẫn mốc thì hiện `—`, không lấy thời lượng đề làm thời gian thực làm.
 
 ### 5.5. Lịch sử và nội dung tham khảo
+
+Card lý thuyết giữ nguyên CSS trước khi thêm lịch sử mô phỏng (trước v6). Card mô phỏng theo cùng phong cách, hiển thị tên/hạng, trạng thái, điểm/tổng điểm và ngày hoàn thành; không hiển thị thời gian làm bài. Hai component card tách riêng để việc chỉnh mô phỏng không đổi card lý thuyết.
+
+Lịch sử có hai hàng tab: Lý thuyết/Mô phỏng ở trên Ngẫu nhiên/Bộ đề có sẵn. Mô phỏng đọc Result plain `/history/simulations`, kiểm tra ID/nguồn, dùng điểm/tổng điểm và ghim watermark/asOf cho các trang và tổng đạt/chưa đạt. Đồng bộ thiếu giữ tổng `null` và hiện “—”, không đổi thành 0. Card mở kết quả và video chỉ đọc tại Practice. Xem [SIMULATION_MODULE.md](SIMULATION_MODULE.md) để biết contract, routes và phục hồi.
 
 History Result lọc `targetType=EXAM`, activity và license. Thống kê lấy Page metadata server, không đếm riêng trang đang thấy. Detail dùng `resultId` Result rồi xác nhận `PRACTICE_SESSION`, source ID và liên kết tới kết quả Practice. Hai ID không thay thế nhau. Điểm đúng/tổng lấy số câu thực tế, không quy cố định thang 10.
 
@@ -212,7 +222,9 @@ Kết thúc học thường là đọc lại tiến độ; không tự tạo exa
 | Method | Path | Service/định dạng |
 | --- | --- | --- |
 | GET | `/api/result/v1/results/me/history` | Result plain Page; targetType/activityType/licenseClass/page/size/sort; adapter hỗ trợ result/from |
-| GET | `/api/result/v1/results/me/history/{resultId}` | Result plain detail/ownership/source linkage |
+| GET | `/api/result/v1/results/me/history/{resultId}` | Result plain detail/ownership/source linkage lý thuyết |
+| GET | `/api/result/v1/results/me/history/simulations` | Result plain; SIM_RANDOM_EXAM/SIM_PRESET_EXAM, licenseClass, page/size/sort, result, watermark/asOf |
+| GET | `/api/practice/v1/simulation-exams/sessions/{sourceId}/result`, `/review`, `/review/{position}/playback` | Practice; kết quả/video snapshot của bài mô phỏng đã nộp; không ghi chấm |
 | GET | `/api/practice/v1/exams/{sourceId}/result` | Practice; bài làm gốc |
 | GET | `/api/practice/v1/traffic-signs` | Practice; page, size=20, group, q |
 | GET | `/api/practice/v1/traffic-signs/{signId}` | Practice; chi tiết |
@@ -232,7 +244,7 @@ Giữ DTO validation; không bỏ kiểm tra hạng/bank/ID để che contract l
 
 ## 8. Chạy phát triển và kiểm tra
 
-Cần Node tương thích Expo SDK 57 và dependencies theo lockfile (`npm ci` khi mới clone/cần cài). Backend phải chạy contract cập nhật ở mục 9. Tại thư mục repo, ví dụ PowerShell:
+Cần Node tương thích Expo SDK 58 và dependencies theo lockfile (`npm ci` khi mới clone/cần cài). Backend phải chạy contract cập nhật ở mục 9. Tại thư mục repo, ví dụ PowerShell:
 
 ```powershell
 $env:EXPO_PUBLIC_DTS_API_URL = 'http://<IP-LAN-may-Gateway>:8888'
