@@ -60,9 +60,9 @@ function SignsContent() {
       </View>
       {resource.error && <View style={{ padding: 16 }}><Message>{resource.error}</Message><AppButton secondary label="Thử lại" onPress={resource.reload} /></View>}
       <FlatList data={data?.items ?? []} numColumns={2} columnWrapperStyle={{ gap: 12 }} keyExtractor={(item) => item.id} renderItem={render} contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 20, flexGrow: 1 }} refreshControl={<RefreshControl refreshing={resource.loading} onRefresh={resource.reload} />}
-        ListHeaderComponent={data ? <Text style={{ fontSize: 14, color: '#4B5563', marginBottom: 12 }}>{data.total} biển báo</Text> : null}
-        ListEmptyComponent={resource.loading ? <ActivityIndicator color="#0877F9" /> : !resource.error ? <Text style={{ fontSize: 16, color: '#4B5563' }}>Không có biển báo phù hợp.</Text> : null}
-        ListFooterComponent={data && data.pages > 1 ? <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}><AppButton secondary label="Trước" disabled={page === 0} onPress={() => choosePage(page - 1)} /><Text style={{ fontSize: 14, color: '#374151' }}>{page + 1}/{data.pages}</Text><AppButton secondary label="Tiếp" disabled={page + 1 >= data.pages} onPress={() => choosePage(page + 1)} /></View> : null} />
+        ListHeaderComponent={data ? <Text style={{ fontSize: 14, color: '#4B5563', marginBottom: 12 }}>{data.total} biển báo</Text> : undefined}
+        ListEmptyComponent={resource.loading ? <ActivityIndicator color="#0877F9" /> : !resource.error ? <Text style={{ fontSize: 16, color: '#4B5563' }}>Không có biển báo phù hợp.</Text> : undefined}
+        ListFooterComponent={data && data.pages > 1 ? <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}><AppButton secondary label="Trước" disabled={page === 0} onPress={() => choosePage(page - 1)} /><Text style={{ fontSize: 14, color: '#374151' }}>{page + 1}/{data.pages}</Text><AppButton secondary label="Tiếp" disabled={page + 1 >= data.pages} onPress={() => choosePage(page + 1)} /></View> : undefined} />
     </View>{selected && <SignDetail id={selected} close={() => setSelected(null)} />}
   </>;
 }

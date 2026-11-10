@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, BackHandler, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Pressable, ScrollView, type ScrollViewInstance, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLearnerSession } from '../../session/session-store';
 import { StudyAccess } from '../../session/components/study-access';
@@ -44,7 +44,7 @@ function ExamContent({ id, title, presetId }: { id: string; title?: string; pres
   const license = useLearnerSession((state) => state.session!.profile.selectedLicenseClass!);
   const { state, model } = useExamSession(id, license), { data } = state;
   const [exitOpen, setExitOpen] = useState(false), [navigator, setNavigator] = useState(false), [now, setNow] = useState(() => Date.now());
-  const insets = useSafeAreaInsets(), scroll = useRef<ScrollView>(null), strip = useRef<ScrollView>(null), expiredRead = useRef<number | null>(null);
+  const insets = useSafeAreaInsets(), scroll = useRef<ScrollViewInstance>(null), strip = useRef<ScrollViewInstance>(null), expiredRead = useRef<number | null>(null);
   const index = data?.questions.findIndex((q) => q.id === data.currentQuestionId) ?? -1;
   const displayTitle = title || `Bài thi hạng ${license}`;
   const locked = state.busy || state.loading || state.needsReload;

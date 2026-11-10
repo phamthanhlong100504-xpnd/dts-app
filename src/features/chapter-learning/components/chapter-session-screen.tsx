@@ -1,7 +1,7 @@
 import { userMessage } from '../../shared/user-message';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, type ScrollViewInstance, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StudyAccess } from '../../session/components/study-access';
 import { SymbolView } from 'expo-symbols';
@@ -23,7 +23,7 @@ function ChapterSessionContent({ chapterId, mode, licenseClass, initialQuestionI
   const { width } = useWindowDimensions();
   const { state, model } = useChapterStudy(chapterId, mode, licenseClass, initialQuestionId);
   const [navigatorOpen, setNavigatorOpen] = useState(false);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const data = state.data;
   const questionId = data?.currentQuestionId;
   useEffect(() => { scroll.current?.scrollTo({ y: 0, animated: false }); }, [questionId]);

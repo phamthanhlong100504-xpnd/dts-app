@@ -42,12 +42,12 @@ function WrongQuestionsContent({ licenseClass, initialFilter }: { licenseClass: 
         ListHeaderComponent={error ? <View className="mb-4 rounded-xl bg-red-50 p-4"><Text selectable className="text-base text-red-700">{userMessage(error)}</Text>
           <Pressable accessibilityRole="button" onPress={reload} className="mt-2 min-h-11 justify-center">
             <Text className="text-base font-semibold text-blue-700">Thử lại</Text>
-          </Pressable></View> : null}
+          </Pressable></View> : undefined}
         ListEmptyComponent={loading ? <ActivityIndicator color="#0877F9" /> : !error && data ?
           <View className="mt-4 items-center rounded-2xl bg-gray-100 p-6">
             <Text className="text-center text-lg font-semibold text-gray-900">{data.total ? 'Không có câu nào trong bộ lọc này' : 'Bạn chưa có câu cần ôn'}</Text>
             <Text className="mt-2 text-center text-base leading-6 text-gray-600">Danh sách được cập nhật theo kết quả đã lưu trên hệ thống.</Text>
-          </View> : null}
+          </View> : undefined}
         renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`Xem câu ${item.sourceNumber ?? item.question.id}`}
           onPress={() => openQuestion(item.question.id)}
           className="rounded-2xl border border-gray-200 bg-gray-100 p-4" style={{ marginBottom: 16 }}>
