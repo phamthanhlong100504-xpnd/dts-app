@@ -8,6 +8,7 @@ import { getChapterOverview } from '../../chapter-learning/chapter-service';
 import { useLearnerResource } from '../../session/use-learner-resource';
 import { reloadLearnerProfile } from '../../session/session-service';
 import { AppButton, AppIcon, Message } from '../../shared/ui';
+import { SimulationHomeCard } from '../../simulations/components/simulation-home-card';
 const cards = [
   { title: 'Đề ngẫu nhiên', icon: 'random', route: '/exams', color: '#2563EB', bg: '#EAF2FF', border: '#D9E7FF', description: 'Thi thử theo hạng bằng' },
   { title: 'Thi theo bộ đề', icon: 'preset', route: '/preset-exams', color: '#7C3AED', bg: '#F1EBFF', border: '#E6DCFB', description: 'Luyện từng bộ đề có sẵn' },
@@ -40,12 +41,11 @@ function HomeContent() {
   return <>
     <Stack.Screen options={{ title: 'Trang chủ', headerShown: true, headerTitleAlign: 'center', headerBackVisible: false,
       headerRight: () => <Pressable accessibilityRole="button" accessibilityLabel="Mở hồ sơ cá nhân" onPress={() => router.push('/profile')} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><AppIcon name="user" size={30} /></Pressable> }} />
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 24, paddingBottom: insets.bottom + 24 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />}>
-      <Text style={{ fontSize: 22, lineHeight: 30, color: '#111827', fontWeight: '700', textAlign: 'center', marginBottom: 36 }}>{data ? `${data.total} câu GPLX` : 'Ôn luyện GPLX'} Hạng {profile?.selectedLicenseClass}</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 6, paddingBottom: insets.bottom + 24 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />}>
       <View style={{ backgroundColor: '#F3F4F6', borderRadius: 18, padding: 16, marginBottom: 36 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <AppIcon name="progress" size={22} />
-          <Text style={{ flex: 1, fontSize: 16, lineHeight: 23, color: '#111827', fontWeight: '600' }}>Tiến độ học tập</Text>
+          <Text style={{ flex: 1, fontSize: 16, lineHeight: 23, color: '#111827', fontWeight: '600' }}>Tiến độ học tập {license}</Text>
           <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>{data ? `${data.learned}/${data.total}` : '—'}</Text>
         </View>
         {loading ? <ActivityIndicator color="#0877F9" style={{ marginVertical: 18 }} /> : error ? <><Message>{error}</Message><AppButton label="Thử lại" secondary onPress={reload} /></> : <>
@@ -56,6 +56,7 @@ function HomeContent() {
       {[0, 2, 4, 6].map((start) => <View key={start} style={{ flexDirection: 'row', alignItems: 'stretch', gap: 18, marginBottom: 18 }}>
         {cards.slice(start, start + 2).map((card) => <HomeFeatureCard key={card.title} card={card} />)}
       </View>)}
+      <SimulationHomeCard />
     </ScrollView>
   </>;
 }
