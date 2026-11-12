@@ -43,9 +43,6 @@ export function ChapterQuestionContent({ data, state, model, canSkip, onSkip }: 
   const readOnly = data.status === 'COMPLETED' && (data.mode === 'review' || data.collection === 'critical');
 
   return <>
-    {question.isCritical && data.collection !== 'critical' && <View className="mb-4 rounded-xl bg-orange-50 px-4 py-3">
-      <Text className="text-base font-semibold text-orange-800">CÂU ĐIỂM LIỆT</Text>
-    </View>}
     <Text className="mb-4 text-gray-900" style={{ ...questionText, fontWeight: '600', lineHeight: 27 }}>
       Câu {position + 1}/{data.questions.length}: {question.text}
     </Text>
