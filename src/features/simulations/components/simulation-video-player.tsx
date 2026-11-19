@@ -33,9 +33,14 @@ export function SimulationVideoPlayer(props: SimulationVideoProps) {
   useEffect(() => { callbacks.current = props; }, [props]);
   const focused = useRef(false), generation = useRef(0), begun = useRef(false), starting = useRef(false), ended = useRef(false), quarantine = useRef(true);
   const clock = useRef(new SimulationMediaClock());
+  const bufferingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ready, setReady] = useState(false), [playing, setPlaying] = useState(false), [time, setTime] = useState(0), [localBusy, setLocalBusy] = useState(false), [failure, setFailure] = useState<unknown>(null);
   const read = useCallback(() => actualMediaMs(player.currentTime), [player]);
-  const stop = useCallback(() => { quarantine.current = true; begun.current = false; clock.current.clear(); player.pause(); setPlaying(false); }, [player]);
+  const clearBufferingTimeout = useCallback(() => {
+    if (bufferingTimeout.current !== null) clearTimeout(bufferingTimeout.current);
+    bufferingTimeout.current = null;
+  }, []);
+  const stop = useCallback(() => { clearBufferingTimeout(); quarantine.current = true; begun.current = false; clock.current.clear(); player.pause(); setPlaying(false); }, [player, clearBufferingTimeout]);
   const fault = useCallback((reason: Parameters<SimulationVideoProps['onFault']>[0]) => {
     if (!begun.current || callbacks.current.readOnly) return;
     stop(); callbacks.current.onFault(reason);
@@ -61,20 +66,34 @@ export function SimulationVideoPlayer(props: SimulationVideoProps) {
     const subscriptions = [
       player.addListener('statusChange', value => {
         setReady(value.status === 'readyToPlay');
+        if (value.status !== 'loading') clearBufferingTimeout();
         if (value.status === 'error') { setFailure(new Error('Không thể tải video.')); fault('VIDEO_ERROR'); }
-        else if (value.status === 'loading' && begun.current && !quarantine.current) fault('NETWORK');
+        else if (value.status === 'loading' && begun.current && !quarantine.current && bufferingTimeout.current === null) {
+          // Brief loading during playback is native buffering, not a failed video.
+          // Never synthesize media time; an 8s stall still interrupts the attempt.
+          const token = generation.current;
+          bufferingTimeout.current = setTimeout(() => {
+            bufferingTimeout.current = null;
+            if (focused.current && token === generation.current && begun.current && !quarantine.current && player.status === 'loading') fault('NETWORK');
+          }, 8000);
+        }
       }),
       player.addListener('playingChange', value => {
         setPlaying(value.isPlaying);
         if (!value.isPlaying && begun.current && !ended.current && !quarantine.current && !callbacks.current.readOnly) {
           // Some native players emit playing=false before playToEnd. Only the actual end event can complete a scenario.
           const token = generation.current;
-          setTimeout(() => { if (focused.current && token === generation.current && begun.current && !ended.current && !quarantine.current && !player.playing) fault('PAUSED'); }, 300);
+          setTimeout(() => { if (focused.current && token === generation.current && begun.current && !ended.current && !quarantine.current && !player.playing && player.status === 'readyToPlay') fault('PAUSED'); }, 300);
         }
       }),
-      player.addListener('timeUpdate', () => {
+      player.addListener('timeUpdate', value => {
         if (!focused.current) return;
-        let ms: number; try { ms = read(); } catch { fault('VIDEO_ERROR'); return; }
+        // iOS can emit a temporary invalid native timestamp while settling.
+        // Ignore only the invalid event sample; never fabricate a position,
+        // update the scoring clock or interrupt a healthy playback lease.
+        const sample = value.currentTime;
+        if (!Number.isFinite(sample) || sample < 0) return;
+        const ms = actualMediaMs(sample);
         setTime(ms);
         if (begun.current && player.playing && !callbacks.current.readOnly && !clock.current.observe(ms, Date.now())) fault('SEEK');
       }),
@@ -88,8 +107,8 @@ export function SimulationVideoPlayer(props: SimulationVideoProps) {
       }),
       AppState.addEventListener('change', value => { if (value !== 'active') { fault('PAGE_EXIT'); player.pause(); } }),
     ];
-    return () => { subscriptions.forEach(subscription => subscription.remove()); };
-  }, [player, read, fault]);
+    return () => { clearBufferingTimeout(); subscriptions.forEach(subscription => subscription.remove()); };
+  }, [player, read, fault, clearBufferingTimeout]);
   const begin = useCallback(async () => {
     const current = callbacks.current;
     if (!focused.current || starting.current || !ready || current.busy) return;

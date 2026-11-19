@@ -90,11 +90,10 @@ export async function learnerRequest<T>(path: string, options: RequestInit = {},
       assertSession(version);
       if (!(error instanceof DtsApiError) || error.status !== 401) throw error;
       await refreshSession(version);
-      try { data = await send(); }
-      catch (retryError) {
-        if (retryError instanceof DtsApiError && retryError.status === 401 && useLearnerSession.getState().version === version) useLearnerSession.getState().clear();
-        throw retryError;
-      }
+      // Identity accepted the refresh token. A second 401 from a feature API
+      // is a feature error, not proof that this user's session was revoked.
+      // Real refresh-token rejection still clears the session in refreshSession.
+      data = await send();
     }
     assertSession(version);
     return data;
