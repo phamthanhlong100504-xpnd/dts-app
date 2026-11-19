@@ -620,7 +620,14 @@ export function createSimulationHttpSource(
         // Reconciliation never creates/replays an attempt, and never substitutes a client score.
         if (a.status === "COMPLETED") return fromAttempt(scope, a);
         check(a.status !== "CANCELLED");
-        const mediaTimeMs = input.mediaTimeMs;
+        let mediaTimeMs = input.mediaTimeMs;
+        if (
+          typeof mediaTimeMs === "number" &&
+          mediaTimeMs > a.videoDurationMs &&
+          mediaTimeMs <= a.videoDurationMs + 3000
+        ) {
+          mediaTimeMs = a.videoDurationMs;
+        }
         check(
           Number.isSafeInteger(mediaTimeMs) &&
             mediaTimeMs! >= 0 &&

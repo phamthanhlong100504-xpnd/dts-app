@@ -120,8 +120,11 @@ export class MobileSimulationLearning {
   complete(ms: number, owner: string) {
     if (!this.state.active || this.state.data?.playbackEventId !== owner) return Promise.resolve();
     this.emit({ active: false, playRequested: false, busy: true });
+    const safeMs = typeof this.state.data?.scenario.durationMs === 'number'
+      ? Math.min(ms, this.state.data.scenario.durationMs)
+      : ms;
     return this.enqueue(async epoch => {
-      try { await this.command(this.intent('COMPLETE', ms), epoch); }
+      try { await this.command(this.intent('COMPLETE', safeMs), epoch); }
       finally { if (this.live(epoch)) this.emit({ busy: false }); }
     });
   }
